@@ -215,7 +215,7 @@ export default function Home() {
 
   const exportToHTML = () => {
     const viewportHeight = window.innerHeight;
-    const initialHeight = parseFloat(previewDimensions[previewMode].minHeight) / 100 * viewportHeight;
+    const initialHeight = parseFloat(previewDimensions[previewMode as keyof typeof previewDimensions].minHeight) / 100 * viewportHeight;
     const maxHeight = Math.max(...elements.map(el => (el.y * initialHeight / viewportHeight) + el.height), parseFloat(previewDimensions[previewMode].minHeight));
     const htmlContent = `
 <!DOCTYPE html>
