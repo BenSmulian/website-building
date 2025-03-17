@@ -219,7 +219,7 @@ export default function Home() {
         ${elements.map(element => {
           const rgbaFillColor = `${element.fillColor}${Math.round(element.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
           const topPosition = element.y * initialHeight / viewportHeight; // Convert y to vh
-          let styles = `
+          const styles = `
             position: absolute;
             left: ${element.x}%;
             top: ${topPosition}vh;
