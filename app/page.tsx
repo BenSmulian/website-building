@@ -187,7 +187,7 @@ export default function Home() {
     setResizeInfo({ isResizing: false, elementId: null, offsetX: 0, offsetY: 0 });
   };
 
-  const updateElementProperty = (elementId: number, property: keyof Element, value: any) => {
+  const updateElementProperty = (elementId: number, property: keyof Element, value: string | number | null | undefined) => {
     setElements(elements.map(el =>
       el.id === elementId ? { ...el, [property]: value } : el
     ));
@@ -241,7 +241,7 @@ export default function Home() {
         ${elements.map(element => {
           const rgbaFillColor = `${element.fillColor}${Math.round(element.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
           const topPosition = element.y * initialHeight / viewportHeight;
-          let styles = `
+          const styles = `
             position: absolute;
             left: ${element.x}%;
             top: ${topPosition}vh;
