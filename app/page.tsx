@@ -87,11 +87,14 @@ export default function Home() {
     e.preventDefault();
     e.stopPropagation();
     const canvasRect = canvasRef.current?.getBoundingClientRect();
-if (!canvasRect) return;
-    const element = elements.find(el => el.id === elementId)!;
+    if (!canvasRect) return;
+    
+    const element = elements.find(el => el.id === elementId);
+    if (!element) return; // Add this check to handle undefined case
+    
     const viewportHeight = window.innerHeight;
     const initialHeight = parseFloat(previewDimensions[previewMode].minHeight) / 100 * viewportHeight;
-
+  
     if (action === 'drag') {
       setDragInfo({
         isDragging: true,
