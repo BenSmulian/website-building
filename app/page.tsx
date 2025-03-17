@@ -24,7 +24,7 @@ type Element = {
   fontWeight?: string;
   fontStyle?: string;
   textDecoration?: string;
-  textAlign?: string;
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
   lineHeight?: number;
   letterSpacing?: number;
   textColor?: string;
@@ -43,9 +43,9 @@ export default function Home() {
   const SNAP_THRESHOLD = 10;
 
   const previewDimensions = {
-    pc: { width: '70vw', minHeight: '85vh' },
-    tablet: { width: '50vw', minHeight: '70vh' },
-    phone: { width: '30vw', minHeight: '60vh' },
+    pc: { width: '70vw' as const, minHeight: '85vh' as const },
+    tablet: { width: '50vw' as const, minHeight: '70vh' as const },
+    phone: { width: '30vw' as const, minHeight: '60vh' as const },
   };
 
   const addElement = (type: 'div' | 'img' | 'btn' | 'text') => {
@@ -86,7 +86,8 @@ export default function Home() {
   const handleMouseDown = (e: React.MouseEvent, elementId: number, action: 'drag' | 'resize') => {
     e.preventDefault();
     e.stopPropagation();
-    const canvasRect = canvasRef.current!.getBoundingClientRect();
+    const canvasRect = canvasRef.current?.getBoundingClientRect();
+if (!canvasRect) return;
     const element = elements.find(el => el.id === elementId)!;
     const viewportHeight = window.innerHeight;
     const initialHeight = parseFloat(previewDimensions[previewMode].minHeight) / 100 * viewportHeight;
@@ -125,7 +126,8 @@ export default function Home() {
       const deltaY = ((e.clientY - dragInfo.startY) / initialHeight) * 100;
       let newX = dragInfo.elementX + deltaX;
       let newY = dragInfo.elementY + deltaY;
-      const draggedElement = elements.find(el => el.id === dragInfo.elementId)!;
+      const draggedElement = elements.find(el => el.id === dragInfo.elementId);
+if (!draggedElement) return;
 
       const draggedTopVh = newY * initialHeight / viewportHeight;
       const draggedBottomVh = draggedTopVh + draggedElement.height;
@@ -187,7 +189,8 @@ export default function Home() {
     setResizeInfo({ isResizing: false, elementId: null, offsetX: 0, offsetY: 0 });
   };
 
-  const updateElementProperty = (elementId: number, property: keyof Element, value: string | number | null | undefined) => {
+  const updateElementProperty = (elementId: number | null, property: keyof Element, value: string | number | null | undefined) => {
+    if (elementId === null) return;
     setElements(elements.map(el =>
       el.id === elementId ? { ...el, [property]: value } : el
     ));
@@ -376,7 +379,7 @@ export default function Home() {
 
   const renderElement = (element: Element) => {
     const viewportHeight = window.innerHeight;
-    const initialHeight = parseFloat(previewDimensions[previewMode].minHeight) / 100 * viewportHeight;
+    const initialHeight = parseFloat(previewDimensions[previewMode as keyof typeof previewDimensions].minHeight) / 100 * viewportHeight;
     const topPosition = element.y * initialHeight / viewportHeight;
     const rgbaFillColor = `${element.fillColor}${Math.round(element.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
     const styles = {
