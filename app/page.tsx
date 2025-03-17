@@ -49,7 +49,7 @@ export default function Home() {
   };
 
   const addElement = (type: 'div' | 'img' | 'btn' | 'text') => {
-    const newElement = {
+    const newElement: Element = {
       id: Date.now(),
       type,
       x: 20,
@@ -74,7 +74,7 @@ export default function Home() {
         fontWeight: 'normal',
         fontStyle: 'normal',
         textDecoration: 'none',
-        textAlign: 'left',
+        textAlign: 'left' as const, // Explicitly type as one of the allowed values
         lineHeight: 1.2,
         letterSpacing: 0,
         textColor: '#000000',
@@ -82,7 +82,7 @@ export default function Home() {
     };
     setElements([...elements, newElement]);
   };
-
+  
   const handleMouseDown = (e: React.MouseEvent, elementId: number, action: 'drag' | 'resize') => {
     e.preventDefault();
     e.stopPropagation();
