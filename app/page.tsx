@@ -2,15 +2,43 @@
 
 import { useState, useRef } from 'react';
 
+type Element = {
+  id: number;
+  type: 'div' | 'img' | 'btn' | 'text';
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  opacity: number;
+  backgroundOpacity: number;
+  fillColor: string;
+  borderWidth: number;
+  borderColor: string;
+  cornerRadius: number;
+  imageUrl?: string;
+  uploadedImage?: string | null;
+  textContent?: string;
+  fontFamily?: string;
+  fontSize?: number;
+  fontWeight?: string;
+  fontStyle?: string;
+  textDecoration?: string;
+  textAlign?: string;
+  lineHeight?: number;
+  letterSpacing?: number;
+  textColor?: string;
+};
+
 export default function Home() {
-  const [elements, setElements] = useState([]);
+  const [elements, setElements] = useState<Element[]>([]);
   const [dragInfo, setDragInfo] = useState({ isDragging: false, elementId: null, startX: 0, startY: 0, elementX: 0, elementY: 0 });
   const [resizeInfo, setResizeInfo] = useState({ isResizing: false, elementId: null, offsetX: 0, offsetY: 0 });
-  const [draggingId, setDraggingId] = useState(null);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
   const [hoverIndex, setHoverIndex] = useState(-1);
-  const [selectedElementId, setSelectedElementId] = useState(null);
+  const [selectedElementId, setSelectedElementId] = useState<number | null>(null);
   const [previewMode, setPreviewMode] = useState('pc');
-  const canvasRef = useRef(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
   const SNAP_THRESHOLD = 10;
 
@@ -24,10 +52,10 @@ export default function Home() {
     const newElement = {
       id: Date.now(),
       type,
-      x: 20, // % of canvas width
-      y: 20, // % of initial viewport height
-      width: 10, // % of canvas width
-      height: 10, // vh
+      x: 20,
+      y: 20,
+      width: 10,
+      height: 10,
       rotation: 0,
       opacity: 1,
       backgroundOpacity: 1,
@@ -55,11 +83,11 @@ export default function Home() {
     setElements([...elements, newElement]);
   };
 
-  const handleMouseDown = (e, elementId, action) => {
+  const handleMouseDown = (e: React.MouseEvent, elementId: number, action: 'drag' | 'resize') => {
     e.preventDefault();
     e.stopPropagation();
-    const canvasRect = canvasRef.current.getBoundingClientRect();
-    const element = elements.find(el => el.id === elementId);
+    const canvasRect = canvasRef.current!.getBoundingClientRect();
+    const element = elements.find(el => el.id === elementId)!;
     const viewportHeight = window.innerHeight;
     const initialHeight = parseFloat(previewDimensions[previewMode].minHeight) / 100 * viewportHeight;
 
@@ -85,8 +113,8 @@ export default function Home() {
     setSelectedElementId(elementId);
   };
 
-  const handleMouseMove = (e) => {
-    const canvasRect = canvasRef.current.getBoundingClientRect();
+  const handleMouseMove = (e: React.MouseEvent) => {
+    const canvasRect = canvasRef.current!.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const initialHeight = parseFloat(previewDimensions[previewMode].minHeight) / 100 * viewportHeight;
     const mouseX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
@@ -97,21 +125,18 @@ export default function Home() {
       const deltaY = ((e.clientY - dragInfo.startY) / initialHeight) * 100;
       let newX = dragInfo.elementX + deltaX;
       let newY = dragInfo.elementY + deltaY;
-      const draggedElement = elements.find(el => el.id === dragInfo.elementId);
+      const draggedElement = elements.find(el => el.id === dragInfo.elementId)!;
 
-      // Convert positions to vh for vertical snapping
       const draggedTopVh = newY * initialHeight / viewportHeight;
       const draggedBottomVh = draggedTopVh + draggedElement.height;
-      const draggedCenterX = newX + draggedElement.width / 2; // % of canvas width
-      const draggedCenterYVh = draggedTopVh + draggedElement.height / 2; // vh
+      const draggedCenterX = newX + draggedElement.width / 2;
+      const draggedCenterYVh = draggedTopVh + draggedElement.height / 2;
 
       elements.forEach(el => {
         if (el.id !== dragInfo.elementId) {
-          // X snapping (edges, in % of canvas width)
           if (Math.abs(newX - (el.x + el.width)) <= SNAP_THRESHOLD / 2) newX = el.x + el.width;
           if (Math.abs((newX + draggedElement.width) - el.x) <= SNAP_THRESHOLD / 2) newX = el.x - draggedElement.width;
 
-          // Y snapping (edges, converted to vh)
           const elTopVh = el.y * initialHeight / viewportHeight;
           const elBottomVh = elTopVh + el.height;
           if (Math.abs(draggedTopVh - elBottomVh) <= SNAP_THRESHOLD / 2 * (initialHeight / viewportHeight)) {
@@ -121,13 +146,11 @@ export default function Home() {
             newY = (elTopVh - draggedElement.height) * viewportHeight / initialHeight;
           }
 
-          // X snapping to horizontal middle (in % of canvas width)
           const elCenterX = el.x + el.width / 2;
           if (Math.abs(draggedCenterX - elCenterX) <= SNAP_THRESHOLD / 2) {
             newX = elCenterX - draggedElement.width / 2;
           }
 
-          // Y snapping to vertical middle (in vh)
           const elCenterYVh = elTopVh + el.height / 2;
           if (Math.abs(draggedCenterYVh - elCenterYVh) <= SNAP_THRESHOLD / 2 * (initialHeight / viewportHeight)) {
             newY = (elCenterYVh - draggedElement.height / 2) * viewportHeight / initialHeight;
@@ -135,12 +158,11 @@ export default function Home() {
         }
       });
 
-      // Constraints
       newX = Math.max(0, Math.min(newX, 100 - draggedElement.width));
       if (draggedTopVh < 0) {
-        newY = 0; // Force top edge to 0vh
+        newY = 0;
       } else {
-        newY = Math.max(newY, 0); // Allow dragging below initial height to expand canvas
+        newY = Math.max(newY, 0);
       }
 
       setElements(elements.map(el =>
@@ -165,13 +187,13 @@ export default function Home() {
     setResizeInfo({ isResizing: false, elementId: null, offsetX: 0, offsetY: 0 });
   };
 
-  const updateElementProperty = (elementId, property, value) => {
+  const updateElementProperty = (elementId: number, property: keyof Element, value: any) => {
     setElements(elements.map(el =>
       el.id === elementId ? { ...el, [property]: value } : el
     ));
   };
 
-  const deleteElement = (elementId) => {
+  const deleteElement = (elementId: number) => {
     setElements(elements.filter(el => el.id !== elementId));
     setSelectedElementId(null);
   };
@@ -218,8 +240,8 @@ export default function Home() {
         }
         ${elements.map(element => {
           const rgbaFillColor = `${element.fillColor}${Math.round(element.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
-          const topPosition = element.y * initialHeight / viewportHeight; // Convert y to vh
-          const styles = `
+          const topPosition = element.y * initialHeight / viewportHeight;
+          let styles = `
             position: absolute;
             left: ${element.x}%;
             top: ${topPosition}vh;
@@ -260,7 +282,7 @@ export default function Home() {
               return `.element-${element.id} { 
                 ${styles}
                 font-family: ${element.fontFamily};
-                font-size: clamp(12px, ${element.fontSize / 100 * 4}vw, ${element.fontSize}px);
+                font-size: clamp(12px, ${element.fontSize! / 100 * 4}vw, ${element.fontSize}px);
                 font-weight: ${element.fontWeight};
                 font-style: ${element.fontStyle};
                 text-decoration: ${element.textDecoration};
@@ -285,7 +307,7 @@ export default function Home() {
             case 'btn':
               return `<button class="element-${element.id}">Button</button>`;
             case 'text':
-              return `<div class="element-${element.id}">${element.textContent.replace(/\n/g, '<br>')}</div>`;
+              return `<div class="element-${element.id}">${element.textContent!.replace(/\n/g, '<br>')}</div>`;
           }
         }).join('\n        ')}
     </div>
@@ -304,18 +326,18 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
-  const handleDragStart = (e, elementId) => {
-    e.dataTransfer.setData('text/plain', elementId);
+  const handleDragStart = (e: React.DragEvent, elementId: number) => {
+    e.dataTransfer.setData('text/plain', elementId.toString());
     e.dataTransfer.effectAllowed = 'move';
     setDraggingId(elementId);
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDragEnter = (e, index) => {
+  const handleDragEnter = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     setHoverIndex(index);
   };
@@ -324,7 +346,7 @@ export default function Home() {
     setHoverIndex(-1);
   };
 
-  const handleDrop = (e, targetId) => {
+  const handleDrop = (e: React.DragEvent, targetId: number) => {
     e.preventDefault();
     const draggedId = parseInt(e.dataTransfer.getData('text/plain'), 10);
     if (draggedId === targetId) return;
@@ -346,19 +368,19 @@ export default function Home() {
     setHoverIndex(-1);
   };
 
-  const handleCanvasClick = (e) => {
+  const handleCanvasClick = (e: React.MouseEvent) => {
     if (e.target === canvasRef.current) {
       setSelectedElementId(null);
     }
   };
 
-  const renderElement = (element) => {
+  const renderElement = (element: Element) => {
     const viewportHeight = window.innerHeight;
     const initialHeight = parseFloat(previewDimensions[previewMode].minHeight) / 100 * viewportHeight;
-    const topPosition = element.y * initialHeight / viewportHeight; // Convert y to vh
+    const topPosition = element.y * initialHeight / viewportHeight;
     const rgbaFillColor = `${element.fillColor}${Math.round(element.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
     const styles = {
-      position: 'absolute',
+      position: 'absolute' as const,
       left: `${element.x}%`,
       top: `${topPosition}vh`,
       width: `${element.width}%`,
@@ -436,27 +458,27 @@ export default function Home() {
   const renderPropertiesPanel = () => {
     const selectedElement = elements.find(el => el.id === selectedElementId);
 
-    const handleImageUpload = (e) => {
-      const file = e.target.files[0];
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
       if (file) {
         const reader = new FileReader();
         reader.onload = (event) => {
-          updateElementProperty(selectedElementId, 'uploadedImage', event.target.result);
-          updateElementProperty(selectedElementId, 'imageUrl', '');
+          updateElementProperty(selectedElementId!, 'uploadedImage', event.target!.result as string);
+          updateElementProperty(selectedElementId!, 'imageUrl', '');
         };
         reader.readAsDataURL(file);
       }
     };
 
-    const handleImageUrlChange = (e) => {
+    const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const url = e.target.value;
-      updateElementProperty(selectedElementId, 'imageUrl', url);
-      updateElementProperty(selectedElementId, 'uploadedImage', null);
+      updateElementProperty(selectedElementId!, 'imageUrl', url);
+      updateElementProperty(selectedElementId!, 'uploadedImage', null);
     };
 
     const clearImage = () => {
-      updateElementProperty(selectedElementId, 'uploadedImage', null);
-      updateElementProperty(selectedElementId, 'imageUrl', '');
+      updateElementProperty(selectedElementId!, 'uploadedImage', null);
+      updateElementProperty(selectedElementId!, 'imageUrl', '');
     };
 
     return (
@@ -469,7 +491,7 @@ export default function Home() {
               <input
                 type="number"
                 value={selectedElement.x}
-                onChange={(e) => updateElementProperty(selectedElementId, 'x', parseFloat(e.target.value))}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'x', parseFloat(e.target.value))}
                 className="w-full bg-gray-700 p-1 rounded"
               />
             </div>
@@ -478,7 +500,7 @@ export default function Home() {
               <input
                 type="number"
                 value={selectedElement.y}
-                onChange={(e) => updateElementProperty(selectedElementId, 'y', parseFloat(e.target.value))}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'y', parseFloat(e.target.value))}
                 className="w-full bg-gray-700 p-1 rounded"
               />
             </div>
@@ -487,7 +509,7 @@ export default function Home() {
               <input
                 type="number"
                 value={selectedElement.width}
-                onChange={(e) => updateElementProperty(selectedElementId, 'width', parseFloat(e.target.value))}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'width', parseFloat(e.target.value))}
                 className="w-full bg-gray-700 p-1 rounded"
               />
             </div>
@@ -496,7 +518,7 @@ export default function Home() {
               <input
                 type="number"
                 value={selectedElement.height}
-                onChange={(e) => updateElementProperty(selectedElementId, 'height', parseFloat(e.target.value))}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'height', parseFloat(e.target.value))}
                 className="w-full bg-gray-700 p-1 rounded"
               />
             </div>
@@ -505,7 +527,7 @@ export default function Home() {
               <input
                 type="number"
                 value={selectedElement.rotation}
-                onChange={(e) => updateElementProperty(selectedElementId, 'rotation', parseInt(e.target.value))}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'rotation', parseInt(e.target.value))}
                 className="w-full bg-gray-700 p-1 rounded"
               />
             </div>
@@ -517,7 +539,7 @@ export default function Home() {
                 min="0"
                 max="1"
                 value={selectedElement.opacity}
-                onChange={(e) => updateElementProperty(selectedElementId, 'opacity', parseFloat(e.target.value))}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'opacity', parseFloat(e.target.value))}
                 className="w-full bg-gray-700 p-1 rounded"
               />
             </div>
@@ -529,7 +551,7 @@ export default function Home() {
                 min="0"
                 max="1"
                 value={selectedElement.backgroundOpacity}
-                onChange={(e) => updateElementProperty(selectedElementId, 'backgroundOpacity', parseFloat(e.target.value))}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'backgroundOpacity', parseFloat(e.target.value))}
                 className="w-full bg-gray-700 p-1 rounded"
               />
             </div>
@@ -538,7 +560,7 @@ export default function Home() {
               <input
                 type="color"
                 value={selectedElement.fillColor}
-                onChange={(e) => updateElementProperty(selectedElementId, 'fillColor', e.target.value)}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'fillColor', e.target.value)}
                 className="w-full h-10 bg-gray-700 rounded"
               />
             </div>
@@ -548,7 +570,7 @@ export default function Home() {
                 type="number"
                 min="0"
                 value={selectedElement.borderWidth}
-                onChange={(e) => updateElementProperty(selectedElementId, 'borderWidth', parseInt(e.target.value))}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'borderWidth', parseInt(e.target.value))}
                 className="w-full bg-gray-700 p-1 rounded"
               />
             </div>
@@ -557,7 +579,7 @@ export default function Home() {
               <input
                 type="color"
                 value={selectedElement.borderColor}
-                onChange={(e) => updateElementProperty(selectedElementId, 'borderColor', e.target.value)}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'borderColor', e.target.value)}
                 className="w-full h-10 bg-gray-700 rounded"
               />
             </div>
@@ -567,7 +589,7 @@ export default function Home() {
                 type="number"
                 min="0"
                 value={selectedElement.cornerRadius}
-                onChange={(e) => updateElementProperty(selectedElementId, 'cornerRadius', parseInt(e.target.value))}
+                onChange={(e) => updateElementProperty(selectedElementId!, 'cornerRadius', parseInt(e.target.value))}
                 className="w-full bg-gray-700 p-1 rounded"
               />
             </div>
@@ -608,16 +630,16 @@ export default function Home() {
                   <label className="block">Text Content</label>
                   <textarea
                     value={selectedElement.textContent}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'textContent', e.target.value)}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'textContent', e.target.value)}
                     className="w-full bg-gray-700 p-1 rounded"
-                    rows="3"
+                    rows={3}
                   />
                 </div>
                 <div>
                   <label className="block">Font Family</label>
                   <select
                     value={selectedElement.fontFamily}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'fontFamily', e.target.value)}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'fontFamily', e.target.value)}
                     className="w-full bg-gray-700 p-1 rounded"
                   >
                     <option value="Arial">Arial</option>
@@ -634,7 +656,7 @@ export default function Home() {
                     type="number"
                     min="1"
                     value={selectedElement.fontSize}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'fontSize', parseInt(e.target.value))}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'fontSize', parseInt(e.target.value))}
                     className="w-full bg-gray-700 p-1 rounded"
                   />
                 </div>
@@ -642,7 +664,7 @@ export default function Home() {
                   <label className="block">Font Weight</label>
                   <select
                     value={selectedElement.fontWeight}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'fontWeight', e.target.value)}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'fontWeight', e.target.value)}
                     className="w-full bg-gray-700 p-1 rounded"
                   >
                     <option value="normal">Normal</option>
@@ -664,7 +686,7 @@ export default function Home() {
                   <label className="block">Font Style</label>
                   <select
                     value={selectedElement.fontStyle}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'fontStyle', e.target.value)}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'fontStyle', e.target.value)}
                     className="w-full bg-gray-700 p-1 rounded"
                   >
                     <option value="normal">Normal</option>
@@ -676,7 +698,7 @@ export default function Home() {
                   <label className="block">Text Decoration</label>
                   <select
                     value={selectedElement.textDecoration}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'textDecoration', e.target.value)}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'textDecoration', e.target.value)}
                     className="w-full bg-gray-700 p-1 rounded"
                   >
                     <option value="none">None</option>
@@ -689,7 +711,7 @@ export default function Home() {
                   <label className="block">Text Align</label>
                   <select
                     value={selectedElement.textAlign}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'textAlign', e.target.value)}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'textAlign', e.target.value)}
                     className="w-full bg-gray-700 p-1 rounded"
                   >
                     <option value="left">Left</option>
@@ -706,7 +728,7 @@ export default function Home() {
                     min="0.5"
                     max="3"
                     value={selectedElement.lineHeight}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'lineHeight', parseFloat(e.target.value))}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'lineHeight', parseFloat(e.target.value))}
                     className="w-full bg-gray-700 p-1 rounded"
                   />
                 </div>
@@ -716,7 +738,7 @@ export default function Home() {
                     type="number"
                     step="0.1"
                     value={selectedElement.letterSpacing}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'letterSpacing', parseFloat(e.target.value))}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'letterSpacing', parseFloat(e.target.value))}
                     className="w-full bg-gray-700 p-1 rounded"
                   />
                 </div>
@@ -725,14 +747,14 @@ export default function Home() {
                   <input
                     type="color"
                     value={selectedElement.textColor}
-                    onChange={(e) => updateElementProperty(selectedElementId, 'textColor', e.target.value)}
+                    onChange={(e) => updateElementProperty(selectedElementId!, 'textColor', e.target.value)}
                     className="w-full h-10 bg-gray-700 rounded"
                   />
                 </div>
               </>
             )}
             <button
-              onClick={() => deleteElement(selectedElementId)}
+              onClick={() => deleteElement(selectedElementId!)}
               className="w-full p-2 bg-red-600 hover:bg-red-700 rounded text-white mt-4"
             >
               Delete Element
