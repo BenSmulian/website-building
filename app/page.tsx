@@ -20,7 +20,7 @@ export default function Home() {
     phone: { width: '30vw', minHeight: '60vh' },
   };
 
-  const addElement = (type) => {
+  const addElement = (type: 'div' | 'img' | 'btn' | 'text') => {
     const newElement = {
       id: Date.now(),
       type,
