@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 
 export default function Home() {
   const [elements, setElements] = useState([]);
@@ -91,26 +91,26 @@ export default function Home() {
     const initialHeight = parseFloat(previewDimensions[previewMode].minHeight) / 100 * viewportHeight;
     const mouseX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
     const mouseY = ((e.clientY - canvasRect.top) / initialHeight) * 100;
-  
+
     if (dragInfo.isDragging) {
       const deltaX = ((e.clientX - dragInfo.startX) / canvasRect.width) * 100;
       const deltaY = ((e.clientY - dragInfo.startY) / initialHeight) * 100;
       let newX = dragInfo.elementX + deltaX;
       let newY = dragInfo.elementY + deltaY;
       const draggedElement = elements.find(el => el.id === dragInfo.elementId);
-  
+
       // Convert positions to vh for vertical snapping
       const draggedTopVh = newY * initialHeight / viewportHeight;
       const draggedBottomVh = draggedTopVh + draggedElement.height;
       const draggedCenterX = newX + draggedElement.width / 2; // % of canvas width
       const draggedCenterYVh = draggedTopVh + draggedElement.height / 2; // vh
-  
+
       elements.forEach(el => {
         if (el.id !== dragInfo.elementId) {
           // X snapping (edges, in % of canvas width)
           if (Math.abs(newX - (el.x + el.width)) <= SNAP_THRESHOLD / 2) newX = el.x + el.width;
           if (Math.abs((newX + draggedElement.width) - el.x) <= SNAP_THRESHOLD / 2) newX = el.x - draggedElement.width;
-  
+
           // Y snapping (edges, converted to vh)
           const elTopVh = el.y * initialHeight / viewportHeight;
           const elBottomVh = elTopVh + el.height;
@@ -120,13 +120,13 @@ export default function Home() {
           if (Math.abs(draggedBottomVh - elTopVh) <= SNAP_THRESHOLD / 2 * (initialHeight / viewportHeight)) {
             newY = (elTopVh - draggedElement.height) * viewportHeight / initialHeight;
           }
-  
+
           // X snapping to horizontal middle (in % of canvas width)
           const elCenterX = el.x + el.width / 2;
           if (Math.abs(draggedCenterX - elCenterX) <= SNAP_THRESHOLD / 2) {
             newX = elCenterX - draggedElement.width / 2;
           }
-  
+
           // Y snapping to vertical middle (in vh)
           const elCenterYVh = elTopVh + el.height / 2;
           if (Math.abs(draggedCenterYVh - elCenterYVh) <= SNAP_THRESHOLD / 2 * (initialHeight / viewportHeight)) {
@@ -134,19 +134,20 @@ export default function Home() {
           }
         }
       });
-  
+
+      // Constraints
       newX = Math.max(0, Math.min(newX, 100 - draggedElement.width));
-      if (draggedTopVh - draggedElement.height / 2 < 0) {
-        newY = draggedElement.height / 2; // Force top edge to 0vh
+      if (draggedTopVh < 0) {
+        newY = 0; // Force top edge to 0vh
       } else {
-        newY = Math.min(newY, (100 * initialHeight / viewportHeight) - draggedElement.height); // Max limit based on canvas height
+        newY = Math.max(newY, 0); // Allow dragging below initial height to expand canvas
       }
 
       setElements(elements.map(el =>
         el.id === dragInfo.elementId ? { ...el, x: newX, y: newY } : el
       ));
     }
-  
+
     if (resizeInfo.isResizing) {
       setElements(elements.map(el => {
         if (el.id === resizeInfo.elementId) {
@@ -356,7 +357,7 @@ export default function Home() {
     const initialHeight = parseFloat(previewDimensions[previewMode].minHeight) / 100 * viewportHeight;
     const topPosition = element.y * initialHeight / viewportHeight; // Convert y to vh
     const rgbaFillColor = `${element.fillColor}${Math.round(element.backgroundOpacity * 255).toString(16).padStart(2, '0')}`;
-    const style = {
+    const styles = {
       position: 'absolute',
       left: `${element.x}%`,
       top: `${topPosition}vh`,
@@ -413,7 +414,7 @@ export default function Home() {
     return (
       <div
         key={element.id}
-        style={style}
+        style={styles}
         className={`cursor-move ${selectedElementId === element.id ? 'ring-2 ring-blue-500' : 'border border-black'}`}
         onMouseDown={(e) => handleMouseDown(e, element.id, 'drag')}
       >
@@ -841,7 +842,7 @@ export default function Home() {
 
       <div
         ref={canvasRef}
-        className="canvas absolute top-[5%] left-[10%] bg-gray-100"
+        className="canvas absolute top-[10%] left-[10%] bg-gray-100"
         style={{
           width: previewDimensions[previewMode].width,
           height: getCanvasHeight(),
